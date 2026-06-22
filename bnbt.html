@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BNBT — Built Not Bought</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(29,158,117,0.4);
+    --text: #e8e6e0;
+    --muted: #888780;
+    --dim: #4a4945;
+    --green: #1d9e75;
+    --green-dark: #04342c;
+    --green-dim: rgba(29,158,117,0.12);
+    --amber: #ef9f27;
+    --blue: #378add;
+    --red: #e24b4a;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+  button { cursor: pointer; font-family: inherit; }
+  input, select, textarea { font-family: inherit; }
+  img { display: block; width: 100%; object-fit: cover; }
+
+  /* ── NAV ── */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 58px;
+    background: rgba(13,13,13,0.92);
+    border-bottom: 0.5px solid var(--border);
+    backdrop-filter: blur(12px);
+  }
+  .nav-brand { display: flex; flex-direction: column; gap: 1px; cursor: pointer; }
+  .nav-brand strong { font-size: 15px; font-weight: 600; letter-spacing: 0.06em; color: var(--text); }
+  .nav-brand span { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a { font-size: 13px; color: var(--muted); transition: color 0.15s; }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .btn-nav { background: var(--green); color: var(--green-dark); font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 6px; border: none; transition: background 0.15s; }
+  .btn-nav:hover { background: #22b886; }
+
+  /* ── PAGES ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── HOME ── */
+  .hero {
+    padding: 80px 32px 64px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--green); margin-bottom: 24px;
+  }
+  .hero-eyebrow::before {
+    content: ''; display: block; width: 20px; height: 1px; background: var(--green);
+  }
+  .hero h1 {
+    font-size: clamp(36px, 5vw, 56px); font-weight: 600; line-height: 1.08;
+    letter-spacing: -0.02em; color: var(--text);
+    max-width: 640px; margin-bottom: 20px;
+  }
+  .hero h1 em { font-style: normal; color: var(--green); }
+  .hero p { font-size: 16px; color: var(--muted); max-width: 440px; margin-bottom: 36px; line-height: 1.65; }
+  .hero-actions { display: flex; align-items: center; gap: 20px; }
+  .btn-primary { background: var(--green); color: var(--green-dark); font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 7px; border: none; transition: background 0.15s; }
+  .btn-primary:hover { background: #22b886; }
+  .btn-ghost { background: transparent; border: none; font-size: 14px; color: var(--muted); padding: 12px 0; transition: color 0.15s; }
+  .btn-ghost:hover { color: var(--text); }
+
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .stat-item { padding: 28px 32px; border-right: 0.5px solid var(--border); }
+  .stat-item:last-child { border-right: none; }
+  .stat-num { font-size: 32px; font-weight: 600; color: var(--green); letter-spacing: -0.02em; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--dim); letter-spacing: 0.04em; }
+
+  .section { padding: 52px 32px; }
+  .section-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+  .section-eyebrow { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green); margin-bottom: 6px; }
+  .section-title { font-size: 22px; font-weight: 600; color: var(--text); }
+  .section-sub { font-size: 13px; color: var(--dim); margin-top: 4px; }
+  .section-link { font-size: 13px; color: var(--muted); transition: color 0.15s; }
+  .section-link:hover { color: var(--green); }
+
+  /* ── BUILDS GRID ── */
+  .builds-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  .build-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden; cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .build-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+
+  .card-img {
+    position: relative; height: 190px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-img-placeholder {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1a1a1a 0%, #1e1e1e 100%);
+  }
+  .car-icon { width: 48px; height: 48px; opacity: 0.2; }
+
+  .proof-badge {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 4px 9px; border-radius: 4px; text-transform: uppercase;
+  }
+  .badge-workshop { background: rgba(29,158,117,0.15); color: var(--green); border: 0.5px solid rgba(29,158,117,0.35); }
+  .badge-invoice { background: rgba(239,159,39,0.12); color: var(--amber); border: 0.5px solid rgba(239,159,39,0.3); }
+  .badge-photo { background: rgba(55,138,221,0.12); color: var(--blue); border: 0.5px solid rgba(55,138,221,0.3); }
+  .badge-owner { background: rgba(255,255,255,0.06); color: var(--muted); border: 0.5px solid rgba(255,255,255,0.12); }
+
+  .card-body { padding: 16px 18px; }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .card-meta { font-size: 12px; color: var(--dim); margin-bottom: 12px; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag {
+    font-size: 11px; color: var(--muted); background: var(--surface2);
+    border: 0.5px solid var(--border); padding: 3px 9px; border-radius: 4px;
+  }
+  .card-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 12px; border-top: 0.5px solid var(--border);
+  }
+  .card-price { font-size: 16px; font-weight: 600; color: var(--text); }
+  .card-workshop { font-size: 11px; color: var(--dim); }
+  .card-workshop span { color: var(--green); }
+
+  /* ── BOTTOM CTA ── */
+  .bottom-cta {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 44px 32px; border-top: 0.5px solid var(--border);
+  }
+  .bottom-cta h2 { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .bottom-cta p { font-size: 13px; color: var(--dim); }
+
+  /* ── LISTING PAGE ── */
+  .listing-layout {
+    display: grid; grid-template-columns: 1fr 340px;
+    gap: 32px; padding: 40px 32px; align-items: start;
+    max-width: 1200px;
+  }
+  .listing-gallery { margin-bottom: 28px; }
+  .gallery-main {
+    height: 380px; background: var(--surface2); border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+  .gallery-thumbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .thumb {
+    height: 64px; background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; overflow: hidden;
+  }
+  .thumb:hover { border-color: var(--border-hover); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  .listing-section { margin-bottom: 32px; }
+  .listing-section-title {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--dim); padding-bottom: 10px; border-bottom: 0.5px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .listing-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 6px; }
+  .listing-meta-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .listing-location { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+  .listing-listed { font-size: 13px; color: var(--dim); }
+
+  .spec-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .spec-item { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .spec-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+  .spec-val { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  .mod-list { display: flex; flex-direction: column; gap: 8px; }
+  .mod-item {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 12px 14px; background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .mod-left { flex: 1; }
+  .mod-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .mod-category { font-size: 11px; color: var(--dim); }
+  .mod-proof { font-size: 10px; font-weight: 600; letter-spacing: 0.06em; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; }
+
+  .build-story { font-size: 14px; color: var(--muted); line-height: 1.75; }
+
+  /* listing sidebar */
+  .listing-sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 78px; }
+  .sidebar-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 20px 22px;
+  }
+  .sidebar-price { font-size: 32px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 4px; }
+  .sidebar-neg { font-size: 12px; color: var(--dim); margin-bottom: 18px; }
+  .btn-contact {
+    width: 100%; background: var(--green); color: var(--green-dark); font-size: 14px;
+    font-weight: 700; padding: 13px; border-radius: 7px; border: none;
+    margin-bottom: 10px; transition: background 0.15s;
+  }
+  .btn-contact:hover { background: #22b886; }
+  .btn-save {
+    width: 100%; background: transparent; color: var(--muted); font-size: 14px;
+    font-weight: 500; padding: 11px; border-radius: 7px;
+    border: 0.5px solid var(--border); transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-save:hover { border-color: var(--border-hover); color: var(--text); }
+  .sidebar-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0; border-bottom: 0.5px solid var(--border); font-size: 13px;
+  }
+  .sidebar-row:last-child { border-bottom: none; }
+  .sidebar-row-label { color: var(--dim); }
+  .sidebar-row-val { color: var(--text); font-weight: 500; }
+  .workshop-card {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    padding: 14px 16px; background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); transition: border-color 0.15s;
+  }
+  .workshop-card:hover { border-color: var(--border-hover); }
+  .workshop-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--green-dim); border: 0.5px solid rgba(29,158,117,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--green); flex-shrink: 0;
+  }
+  .workshop-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .workshop-role { font-size: 11px; color: var(--dim); }
+  .workshop-arrow { font-size: 16px; color: var(--dim); margin-left: auto; }
+
+  /* ── SUBMIT FORM ── */
+  .submit-layout {
+    display: grid; grid-template-columns: 1fr 280px;
+    gap: 32px; padding: 40px 32px; align-items: start;
+  }
+  .submit-header { margin-bottom: 28px; }
+  .submit-header .eyebrow { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--green); margin-bottom: 8px; }
+  .submit-header h1 { font-size: 26px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .submit-header p { font-size: 13px; color: var(--dim); }
+  .steps-row { display: flex; align-items: center; gap: 0; margin: 20px 0 0; }
+  .step { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--dim); }
+  .step.active { color: var(--green); }
+  .step-dot {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 0.5px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; flex-shrink: 0;
+  }
+  .step.active .step-dot { background: var(--green); color: var(--green-dark); border-color: var(--green); }
+  .step-line { width: 28px; height: 0.5px; background: var(--border); margin: 0 6px; }
+  .form-cards { display: flex; flex-direction: column; gap: 20px; }
+  .form-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px 26px;
+  }
+  .form-card-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    margin-bottom: 3px; display: flex; align-items: center; gap: 8px;
+  }
+  .form-card-icon { font-size: 15px; }
+  .form-card-sub { font-size: 12px; color: var(--dim); margin-bottom: 20px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label.lbl { display: block; font-size: 11px; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.04em; }
+  label.lbl em { color: var(--green); font-style: normal; }
+  .inp {
+    width: 100%; background: var(--bg); border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 6px; padding: 9px 12px; font-size: 13px; color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .inp:focus { border-color: rgba(29,158,117,0.5); }
+  .inp::placeholder { color: var(--dim); }
+  .sel {
+    width: 100%; background: var(--bg); border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 6px; padding: 9px 12px; font-size: 13px; color: var(--muted);
+    outline: none; appearance: none;
+  }
+  .sel:focus { border-color: rgba(29,158,117,0.5); outline: none; }
+  .txta {
+    width: 100%; background: var(--bg); border: 0.5px solid rgba(255,255,255,0.1);
+    border-radius: 6px; padding: 10px 12px; font-size: 13px; color: var(--text);
+    outline: none; resize: vertical; min-height: 100px; transition: border-color 0.15s;
+  }
+  .txta:focus { border-color: rgba(29,158,117,0.5); }
+  .txta::placeholder { color: var(--dim); }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  .mod-entry { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .mod-entry .inp { flex: 1; }
+  .mod-remove-btn {
+    background: transparent; border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 8px 10px; color: var(--dim); font-size: 13px; flex-shrink: 0;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .mod-remove-btn:hover { color: var(--red); border-color: rgba(226,75,74,0.4); }
+  .add-mod-btn {
+    width: 100%; background: transparent; border: 0.5px solid rgba(29,158,117,0.25);
+    border-radius: 6px; padding: 8px 14px; font-size: 12px; color: var(--green);
+    transition: background 0.15s; margin-top: 4px;
+  }
+  .add-mod-btn:hover { background: var(--green-dim); }
+
+  .proof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .proof-option {
+    border: 0.5px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  }
+  .proof-option:hover { border-color: rgba(29,158,117,0.35); }
+  .proof-option.active { border-color: rgba(29,158,117,0.6); background: var(--green-dim); }
+  .proof-option-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .proof-option-sub { font-size: 11px; color: var(--dim); }
+
+  .upload-zone {
+    border: 0.5px dashed rgba(255,255,255,0.12); border-radius: var(--radius);
+    padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.15s;
+  }
+  .upload-zone:hover { border-color: rgba(29,158,117,0.4); }
+  .upload-icon { font-size: 28px; opacity: 0.25; margin-bottom: 10px; }
+  .upload-zone p { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .upload-zone span { font-size: 11px; color: var(--dim); }
+
+  .submit-sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 78px; }
+  .sub-preview-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 18px 20px;
+  }
+  .sub-preview-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; }
+  .preview-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; border-bottom: 0.5px solid var(--border); }
+  .preview-row:last-child { border-bottom: none; }
+  .preview-row-label { color: var(--dim); }
+  .preview-row-val { color: var(--muted); }
+  .tip-list { display: flex; flex-direction: column; gap: 9px; }
+  .tip-item { display: flex; gap: 8px; font-size: 12px; color: var(--dim); align-items: flex-start; }
+  .tip-icon { color: var(--green); flex-shrink: 0; margin-top: 1px; }
+  .btn-submit {
+    width: 100%; background: var(--green); color: var(--green-dark);
+    font-size: 14px; font-weight: 700; padding: 14px; border-radius: 7px; border: none;
+    transition: background 0.15s;
+  }
+  .btn-submit:hover { background: #22b886; }
+  .submit-footnote { font-size: 11px; color: var(--dim); text-align: center; margin-top: 8px; line-height: 1.6; }
+
+  /* ── BACK BUTTON ── */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--muted); background: none; border: none;
+    padding: 16px 32px; transition: color 0.15s; cursor: pointer;
+  }
+  .back-btn:hover { color: var(--text); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface); border: 0.5px solid rgba(29,158,117,0.4);
+    color: var(--text); font-size: 13px; padding: 12px 20px; border-radius: 8px;
+    opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .nav { padding: 0 16px; }
+    .nav-links { display: none; }
+    .hero { padding: 48px 16px 40px; }
+    .stats-row { grid-template-columns: 1fr; }
+    .stat-item { border-right: none; border-bottom: 0.5px solid var(--border); }
+    .section { padding: 36px 16px; }
+    .builds-grid { grid-template-columns: 1fr; }
+    .listing-layout { grid-template-columns: 1fr; padding: 20px 16px; }
+    .submit-layout { grid-template-columns: 1fr; padding: 20px 16px; }
+    .submit-sidebar { display: none; }
+    .spec-grid { grid-template-columns: 1fr 1fr; }
+    .g3 { grid-template-columns: 1fr 1fr; }
+    .bottom-cta { flex-direction: column; gap: 20px; padding: 36px 16px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand" onclick="showPage('home')">
+    <strong>BNBT</strong>
+    <span>Built Not Bought</span>
+  </div>
+  <div class="nav-links">
+    <a onclick="showPage('home')" id="nav-home" class="active">Browse</a>
+    <a href="#" onclick="showPage('home')">Workshops</a>
+    <a href="#" onclick="showPage('home')">Trends</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-nav" onclick="showPage('submit')">Submit your build</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════ HOME PAGE -->
+<div class="page active" id="page-home">
+
+  <section class="hero">
+    <div class="hero-eyebrow">The Drop — Season 01</div>
+    <h1>Cars built with<br><em>intention.</em></h1>
+    <p>A marketplace for modified and enthusiast-built vehicles. Every listing documents the build, the parts, and the people behind the work.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="scrollToBuilds()">Browse builds</button>
+      <button class="btn-ghost" onclick="showPage('submit')">Submit yours →</button>
+    </div>
+  </section>
+
+  <div class="stats-row">
+    <div class="stat-item">
+      <div class="stat-num">25</div>
+      <div class="stat-label">Curated builds in The Drop</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">R0</div>
+      <div class="stat-label">Cost to list your build</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">4</div>
+      <div class="stat-label">Proof verification levels</div>
+    </div>
+  </div>
+
+  <section class="section" id="builds-section">
+    <div class="section-top">
+      <div>
+        <div class="section-eyebrow">The Drop</div>
+        <div class="section-title">Featured builds</div>
+        <div class="section-sub">Hand-picked. Fully documented.</div>
+      </div>
+      <a class="section-link">View all 25 →</a>
+    </div>
+
+    <div class="builds-grid" id="builds-grid"></div>
+  </section>
+
+  <div class="bottom-cta">
+    <div>
+      <h2>Built something worth showing?</h2>
+      <p>Submit your build to The Drop. No cost. Full documentation.</p>
+    </div>
+    <button class="btn-primary" onclick="showPage('submit')">Submit your build →</button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════ LISTING PAGE -->
+<div class="page" id="page-listing">
+  <button class="back-btn" onclick="showPage('home')">← Back to builds</button>
+
+  <div class="listing-layout">
+    <div id="listing-main"></div>
+    <div id="listing-sidebar"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ SUBMIT PAGE -->
+<div class="page" id="page-submit">
+  <button class="back-btn" onclick="showPage('home')">← Back</button>
+
+  <div class="submit-layout">
+    <div>
+      <div class="submit-header">
+        <div class="eyebrow">The Drop</div>
+        <h1>Submit your build</h1>
+        <p>Document your car properly. Free to list. Reviewed within 48 hours.</p>
+        <div class="steps-row">
+          <div class="step active"><div class="step-dot">1</div> The car</div>
+          <div class="step-line"></div>
+          <div class="step"><div class="step-dot">2</div> The build</div>
+          <div class="step-line"></div>
+          <div class="step"><div class="step-dot">3</div> Photos</div>
+          <div class="step-line"></div>
+          <div class="step"><div class="step-dot">4</div> Pricing</div>
+        </div>
+      </div>
+
+      <div class="form-cards">
+
+        <!-- Vehicle -->
+        <div class="form-card">
+          <div class="form-card-title"><span class="form-card-icon">🚗</span> Vehicle details</div>
+          <div class="form-card-sub">Basic information about the car</div>
+          <div class="g3">
+            <div class="field"><label class="lbl">Year <em>*</em></label><input class="inp" placeholder="e.g. 1999" /></div>
+            <div class="field"><label class="lbl">Make <em>*</em></label><input class="inp" placeholder="e.g. Honda" /></div>
+            <div class="field"><label class="lbl">Model <em>*</em></label><input class="inp" placeholder="e.g. Civic" /></div>
+          </div>
+          <div class="g2">
+            <div class="field"><label class="lbl">Variant / trim</label><input class="inp" placeholder="e.g. Type R EK9" /></div>
+            <div class="field"><label class="lbl">Chassis code</label><input class="inp" placeholder="e.g. EK9" /></div>
+          </div>
+          <div class="g2">
+            <div class="field"><label class="lbl">Mileage (km)</label><input class="inp" placeholder="e.g. 142 000" /></div>
+            <div class="field"><label class="lbl">Location <em>*</em></label><input class="inp" placeholder="e.g. Johannesburg" /></div>
+          </div>
+          <div class="g2">
+            <div class="field">
+              <label class="lbl">Transmission</label>
+              <select class="sel"><option value="">Select</option><option>Manual</option><option>Automatic</option><option>Sequential</option></select>
+            </div>
+            <div class="field">
+              <label class="lbl">Drivetrain</label>
+              <select class="sel"><option value="">Select</option><option>FWD</option><option>RWD</option><option>AWD / 4WD</option></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mods -->
+        <div class="form-card">
+          <div class="form-card-title"><span class="form-card-icon">⚙️</span> Modifications</div>
+          <div class="form-card-sub">List each mod. Name the brand, spec, and installer where possible.</div>
+          <div id="mods-container">
+            <div class="field">
+              <label class="lbl">Engine mods</label>
+              <div class="mod-entry"><input class="inp" placeholder="e.g. K20A2 engine swap — JDM spec" /><button class="mod-remove-btn" onclick="removeMod(this)">✕</button></div>
+              <button class="add-mod-btn" onclick="addMod(this, 'Engine mods')">+ Add engine mod</button>
+            </div>
+            <div class="field" style="margin-top:14px;">
+              <label class="lbl">Suspension</label>
+              <div class="mod-entry"><input class="inp" placeholder="e.g. Tein Flex Z coilovers" /><button class="mod-remove-btn" onclick="removeMod(this)">✕</button></div>
+              <button class="add-mod-btn" onclick="addMod(this, 'Suspension')">+ Add suspension mod</button>
+            </div>
+            <div class="field" style="margin-top:14px;">
+              <label class="lbl">Wheels &amp; brakes</label>
+              <button class="add-mod-btn" onclick="addMod(this, 'Wheels &amp; brakes')">+ Add wheels / brakes mod</button>
+            </div>
+            <div class="field" style="margin-top:14px;">
+              <label class="lbl">Exterior / bodywork</label>
+              <button class="add-mod-btn" onclick="addMod(this, 'Exterior')">+ Add exterior mod</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Who built it -->
+        <div class="form-card">
+          <div class="form-card-title"><span class="form-card-icon">🔧</span> Who built it</div>
+          <div class="form-card-sub">Credit the workshop, tuner, or specialist. They get a public profile page.</div>
+          <div class="field"><label class="lbl">Workshop or tuner name</label><input class="inp" placeholder="e.g. Torque Factory, Boksburg" /></div>
+          <div class="field"><label class="lbl">Any other notes on the build team</label><input class="inp" placeholder="e.g. Tune by Dave at Apex Motorsport" /></div>
+        </div>
+
+        <!-- Proof -->
+        <div class="form-card">
+          <div class="form-card-title"><span class="form-card-icon">🛡️</span> Proof level</div>
+          <div class="form-card-sub">How can buyers verify your modifications?</div>
+          <div class="proof-grid">
+            <div class="proof-option" onclick="selectProof(this)">
+              <div class="proof-option-title">Owner declared</div>
+              <div class="proof-option-sub">Your word. No docs needed.</div>
+            </div>
+            <div class="proof-option active" onclick="selectProof(this)">
+              <div class="proof-option-title">Photo verified</div>
+              <div class="proof-option-sub">Photos showing the mods.</div>
+            </div>
+            <div class="proof-option" onclick="selectProof(this)">
+              <div class="proof-option-title">Invoice verified</div>
+              <div class="proof-option-sub">Receipts or invoices attached.</div>
+            </div>
+            <div class="proof-option" onclick="selectProof(this)">
+              <div class="proof-option-title">Workshop verified</div>
+              <div class="proof-option-sub">Workshop confirms the work.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="form-card">
+          <div class="form-card-title"><span class="form-card-icon">📷</span> Photos</div>
+          <div class="form-card-sub">First photo is your cover shot. Shoot the engine bay, not just the exterior.</div>
+          <div class="upload-zone" onclick="showToast('Photo upload will work once connected to storage')">
+            <div class="upload-icon">↑</div>
+            <p>Drag photos here or click to upload</p>
+            <span>Up to 20 photos · JPG or PNG · First photo = cover</span>
+          </div>
+        </div>
+
+        <!-- Story -->
+        <div class="form-card">
+          <div class="form-card-title"><span class="form-card-icon">✍️</span> Build story</div>
+          <div class="form-card-sub">What makes this car yours? The goal, the journey, the personality.</div>
+          <textarea class="txta" placeholder="Tell us about the build. Why this car? Was the goal street, track, or show? What took the longest? What are you most proud of?"></textarea>
+        </div>
+
+        <!-- Price -->
+        <div class="form-card">
+          <div class="form-card-title"><span class="form-card-icon">💰</span> Asking price</div>
+          <div class="g2">
+            <div class="field"><label class="lbl">Price (ZAR) <em>*</em></label><input class="inp" placeholder="e.g. 285000" /></div>
+            <div class="field">
+              <label class="lbl">Negotiable?</label>
+              <select class="sel"><option>Yes, open to offers</option><option>No — firm price</option><option>Showcase only</option></select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="submit-sidebar">
+      <div class="sub-preview-card">
+        <div class="sub-preview-title">Listing preview</div>
+        <div class="preview-row"><span class="preview-row-label">Vehicle</span><span class="preview-row-val">Year · Make · Model</span></div>
+        <div class="preview-row"><span class="preview-row-label">Price</span><span class="preview-row-val">—</span></div>
+        <div class="preview-row"><span class="preview-row-label">Location</span><span class="preview-row-val">Not set</span></div>
+        <div class="preview-row"><span class="preview-row-label">Proof level</span><span class="preview-row-val" style="color:var(--blue)">Photo verified</span></div>
+      </div>
+      <div class="sub-preview-card">
+        <div class="sub-preview-title">Tips for a strong listing</div>
+        <div class="tip-list">
+          <div class="tip-item"><span class="tip-icon">✓</span> Name the brand and spec of every mod</div>
+          <div class="tip-item"><span class="tip-icon">✓</span> Shoot the engine bay, not just the exterior</div>
+          <div class="tip-item"><span class="tip-icon">✓</span> Credit the workshop — they'll share it</div>
+          <div class="tip-item"><span class="tip-icon">✓</span> Upload invoices if you have them</div>
+          <div class="tip-item"><span class="tip-icon">✓</span> Be honest about what still needs work</div>
+        </div>
+      </div>
+      <button class="btn-submit" onclick="handleSubmit()">Submit for review →</button>
+      <div class="submit-footnote">Reviewed within 48 hours.<br>Free to list. Always.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA — Edit this to add/change listings
+// ═══════════════════════════════════════
+const BUILDS = [
+  {
+    id: 1,
+    title: '1999 Honda Civic Type R',
+    variant: 'EK9',
+    year: 1999, make: 'Honda', model: 'Civic',
+    location: 'Johannesburg', listed: '2 days ago',
+    price: 285000, negotiable: true,
+    transmission: 'Manual', drivetrain: 'FWD', mileage: '142 000 km',
+    engine: 'K20A2',
+    proof: 'workshop',
+    workshop: { name: 'Torque Factory', initials: 'TF', role: 'Full engine build + tune' },
+    tags: ['K20 swap', 'Coilovers', 'Full cage', 'Stripped'],
+    mods: [
+      { name: 'K20A2 engine swap — JDM spec', category: 'Engine', proof: 'workshop' },
+      { name: 'Skunk2 Pro Series intake manifold', category: 'Engine', proof: 'invoice' },
+      { name: 'Tein Flex Z coilovers', category: 'Suspension', proof: 'invoice' },
+      { name: 'OMP full roll cage', category: 'Safety', proof: 'workshop' },
+      { name: 'Recaro SR-3 bucket seats', category: 'Interior', proof: 'photo' },
+      { name: 'Rays Volk TE37 17x8 +35', category: 'Wheels', proof: 'photo' },
+    ],
+    story: "Started as a clean EK9 shell. The goal was always a proper trackday machine that could still drive home. K20 went in about two years ago — Torque Factory handled the entire build from cage to tune. It's been through 14 track days at Zwartkops and Kyalami. Nothing has broken. That's the point.",
+    color: '#1a1f1a',
+  },
+  {
+    id: 2,
+    title: '2003 Subaru WRX STI',
+    variant: 'GDB',
+    year: 2003, make: 'Subaru', model: 'WRX STI',
+    location: 'Cape Town', listed: '5 days ago',
+    price: 420000, negotiable: false,
+    transmission: 'Manual', drivetrain: 'AWD', mileage: '98 000 km',
+    engine: 'EJ207',
+    proof: 'invoice',
+    workshop: { name: 'Boxer Performance CT', initials: 'BP', role: 'Engine rebuild + stage 3 tune' },
+    tags: ['Stage 3 tune', 'Forged internals', 'TMIC', '400whp'],
+    mods: [
+      { name: 'CP pistons + Manley rods — forged', category: 'Engine', proof: 'invoice' },
+      { name: 'Perrin top mount intercooler kit', category: 'Intake', proof: 'invoice' },
+      { name: 'Cobb AccessPort V3 + stage 3 map', category: 'Tune', proof: 'workshop' },
+      { name: 'Whiteline front + rear sway bars', category: 'Suspension', proof: 'invoice' },
+      { name: 'STI DCCD differential', category: 'Drivetrain', proof: 'photo' },
+    ],
+    story: "GDB with full forged bottom end and a proper stage 3 map. 400whp on the dyno at Boxer Performance. Daily driven to work and occasional track outings. Every receipt from every mod is in the folder — over R180k spent documented. Not looking to give it away.",
+    color: '#1a1a1f',
+  },
+  {
+    id: 3,
+    title: '1995 BMW E36 328i',
+    variant: 'Trackday build',
+    year: 1995, make: 'BMW', model: 'E36 328i',
+    location: 'Pretoria', listed: '1 week ago',
+    price: 145000, negotiable: true,
+    transmission: 'Manual', drivetrain: 'RWD', mileage: '210 000 km',
+    engine: 'M52B28',
+    proof: 'photo',
+    workshop: null,
+    tags: ['M3 brakes', 'Bilstein B8', 'Stripped interior', 'Harness bar'],
+    mods: [
+      { name: 'E36 M3 front + rear brake conversion', category: 'Brakes', proof: 'photo' },
+      { name: 'Bilstein B8 + H&R sport springs', category: 'Suspension', proof: 'photo' },
+      { name: 'Full interior strip — carpet, sound deadening', category: 'Interior', proof: 'photo' },
+      { name: 'Sparco harness bar + 4-point harnesses', category: 'Safety', proof: 'photo' },
+      { name: 'Momo steering wheel + hub adapter', category: 'Interior', proof: 'owner' },
+    ],
+    story: "Bought this as a tired daily and turned it into a budget trackday weapon over two years. Owner-built — every mod done myself in the driveway. Not the prettiest but it's sorted. M3 brakes transformed it. Looking to move on to a dedicated race build.",
+    color: '#1f1a1a',
+  },
+];
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function proofBadge(level) {
+  const map = {
+    workshop: ['badge-workshop', 'Workshop verified'],
+    invoice:  ['badge-invoice',  'Invoice verified'],
+    photo:    ['badge-photo',    'Photo verified'],
+    owner:    ['badge-owner',    'Owner declared'],
+  };
+  const [cls, label] = map[level] || map.owner;
+  return `<span class="proof-badge ${cls}">${label}</span>`;
+}
+
+function proofBadgeInline(level) {
+  const map = {
+    workshop: ['badge-workshop', 'Workshop verified'],
+    invoice:  ['badge-invoice',  'Invoice verified'],
+    photo:    ['badge-photo',    'Photo verified'],
+    owner:    ['badge-owner',    'Owner declared'],
+  };
+  const [cls, label] = map[level] || map.owner;
+  return `<span class="proof-badge ${cls}" style="position:static;margin-left:8px;">${label}</span>`;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('builds-grid');
+  grid.innerHTML = BUILDS.map(b => `
+    <div class="build-card" onclick="showListing(${b.id})">
+      <div class="card-img" style="background:${b.color}">
+        <div class="card-img-placeholder">
+          <svg class="car-icon" viewBox="0 0 64 32" fill="none">
+            <path d="M8 22 L12 10 Q14 6 18 6 L46 6 Q50 6 52 10 L56 22" stroke="white" stroke-width="2" fill="none"/>
+            <rect x="4" y="20" width="56" height="8" rx="3" fill="white" opacity="0.15"/>
+            <circle cx="16" cy="28" r="4" stroke="white" stroke-width="2" fill="none"/>
+            <circle cx="48" cy="28" r="4" stroke="white" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+        ${proofBadge(b.proof)}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${b.title}</div>
+        <div class="card-meta">${b.location} · Listed ${b.listed}</div>
+        <div class="card-tags">${b.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        <div class="card-footer">
+          <span class="card-price">R ${b.price.toLocaleString('en-ZA')}</span>
+          <span class="card-workshop">${b.workshop ? `By <span>${b.workshop.name}</span>` : 'Owner build'}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showListing(id) {
+  const b = BUILDS.find(x => x.id === id);
+  if (!b) return;
+
+  const main = document.getElementById('listing-main');
+  main.innerHTML = `
+    <div class="listing-gallery">
+      <div class="gallery-main" style="background:${b.color}">
+        <div class="card-img-placeholder" style="height:100%">
+          <svg style="width:80px;height:80px;opacity:0.15" viewBox="0 0 64 32" fill="none">
+            <path d="M8 22 L12 10 Q14 6 18 6 L46 6 Q50 6 52 10 L56 22" stroke="white" stroke-width="2.5" fill="none"/>
+            <rect x="4" y="20" width="56" height="8" rx="3" fill="white" opacity="0.5"/>
+            <circle cx="16" cy="28" r="4" stroke="white" stroke-width="2.5" fill="none"/>
+            <circle cx="48" cy="28" r="4" stroke="white" stroke-width="2.5" fill="none"/>
+          </svg>
+        </div>
+      </div>
+      <div class="gallery-thumbs">
+        ${[1,2,3,4,5].map(i => `<div class="thumb" style="background:${b.color}"></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="listing-section">
+      <div class="listing-title">${b.year} ${b.make} ${b.model} <span style="color:var(--muted);font-weight:400">${b.variant}</span></div>
+      <div class="listing-meta-row">
+        <span class="listing-location">📍 ${b.location}</span>
+        <span class="listing-listed">Listed ${b.listed}</span>
+        ${proofBadgeInline(b.proof)}
+      </div>
+    </div>
+
+    <div class="listing-section">
+      <div class="listing-section-title">Specs</div>
+      <div class="spec-grid">
+        <div class="spec-item"><div class="spec-label">Engine</div><div class="spec-val">${b.engine}</div></div>
+        <div class="spec-item"><div class="spec-label">Transmission</div><div class="spec-val">${b.transmission}</div></div>
+        <div class="spec-item"><div class="spec-item"><div class="spec-label">Drivetrain</div><div class="spec-val">${b.drivetrain}</div></div></div>
+        <div class="spec-item"><div class="spec-label">Mileage</div><div class="spec-val">${b.mileage}</div></div>
+        <div class="spec-item"><div class="spec-label">Year</div><div class="spec-val">${b.year}</div></div>
+        <div class="spec-item"><div class="spec-label">Location</div><div class="spec-val">${b.location}</div></div>
+      </div>
+    </div>
+
+    <div class="listing-section">
+      <div class="listing-section-title">Modifications (${b.mods.length})</div>
+      <div class="mod-list">
+        ${b.mods.map(m => `
+          <div class="mod-item">
+            <div class="mod-left">
+              <div class="mod-name">${m.name}</div>
+              <div class="mod-category">${m.category}</div>
+            </div>
+            ${proofBadgeInline(m.proof)}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="listing-section">
+      <div class="listing-section-title">Build story</div>
+      <div class="build-story">${b.story}</div>
+    </div>
+  `;
+
+  const sidebar = document.getElementById('listing-sidebar');
+  sidebar.innerHTML = `
+    <div class="sidebar-card">
+      <div class="sidebar-price">R ${b.price.toLocaleString('en-ZA')}</div>
+      <div class="sidebar-neg">${b.negotiable ? 'Open to offers' : 'Firm price'}</div>
+      <button class="btn-contact" onclick="showToast('Contact feature coming soon')">Contact seller</button>
+      <button class="btn-save" onclick="showToast('Saved to your watchlist')">Save listing</button>
+    </div>
+    <div class="sidebar-card">
+      <div class="sidebar-row"><span class="sidebar-row-label">Make</span><span class="sidebar-row-val">${b.make}</span></div>
+      <div class="sidebar-row"><span class="sidebar-row-label">Model</span><span class="sidebar-row-val">${b.model}</span></div>
+      <div class="sidebar-row"><span class="sidebar-row-label">Year</span><span class="sidebar-row-val">${b.year}</span></div>
+      <div class="sidebar-row"><span class="sidebar-row-label">Transmission</span><span class="sidebar-row-val">${b.transmission}</span></div>
+      <div class="sidebar-row"><span class="sidebar-row-label">Drivetrain</span><span class="sidebar-row-val">${b.drivetrain}</span></div>
+      <div class="sidebar-row"><span class="sidebar-row-label">Mileage</span><span class="sidebar-row-val">${b.mileage}</span></div>
+    </div>
+    ${b.workshop ? `
+    <div class="workshop-card" onclick="showToast('Workshop profiles coming soon')">
+      <div class="workshop-avatar">${b.workshop.initials}</div>
+      <div>
+        <div class="workshop-name">${b.workshop.name}</div>
+        <div class="workshop-role">${b.workshop.role}</div>
+      </div>
+      <span class="workshop-arrow">→</span>
+    </div>` : ''}
+  `;
+
+  showPage('listing');
+}
+
+// ═══════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  if (name === 'home') document.getElementById('nav-home').classList.add('active');
+}
+
+function scrollToBuilds() {
+  document.getElementById('builds-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+function addMod(btn, label) {
+  const field = btn.closest('.field');
+  const entry = document.createElement('div');
+  entry.className = 'mod-entry';
+  entry.innerHTML = `<input class="inp" placeholder="Add a ${label.toLowerCase()} mod..." /><button class="mod-remove-btn" onclick="removeMod(this)">✕</button>`;
+  field.insertBefore(entry, btn);
+}
+
+function removeMod(btn) {
+  btn.closest('.mod-entry').remove();
+}
+
+function selectProof(el) {
+  document.querySelectorAll('.proof-option').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function handleSubmit() {
+  showToast('Build submitted! We\'ll review it within 48 hours.');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Init
+renderGrid();
+</script>
+</body>
+</html>
